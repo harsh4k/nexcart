@@ -26,7 +26,7 @@ It avoids unnecessary complexity while delivering the core functionality expecte
 * Google authentication
 * Order management system
 * Fast frontend deployment (Vercel)
-* Backend powered by Express and MongoDB
+* Serverless backend on Firebase (Auth, Firestore, Storage)
 * Minimal and clean UI
 
 ---
@@ -38,17 +38,14 @@ It avoids unnecessary complexity while delivering the core functionality expecte
 - React Router
 
 ### Backend
-- Node.js + Express (`server.ts`)
-- MongoDB (Mongoose)
-- Firebase (auth via `react-firebase-hooks`)
-
-### AI
-- Google Gemini API (`@google/genai`)
+- Firebase Auth (Google sign-in)
+- Cloud Firestore (catalog, user profiles)
+- Firebase Storage (profile photos)
 
 ## Setup
 ```powershell
 npm install
-# configure .env — see .env.example (Mongo URI, Firebase config, Gemini key)
+# optional: configure Firebase in .env (see .env.example)
 npm run dev
 ```
 

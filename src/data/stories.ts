@@ -25,7 +25,7 @@ export const STORIES: Story[] = [
     readTime: '4 min read',
     category: 'Design',
     tags: ['Audio', 'Minimalism', 'Craftsmanship'],
-    relatedProductIds: [1]
+    relatedProductIds: ['nex-one-headphones']
   },
   {
     id: '2',
@@ -49,7 +49,7 @@ export const STORIES: Story[] = [
     readTime: '3 min read',
     category: 'Technology',
     tags: ['Wearables', 'Health', 'Future'],
-    relatedProductIds: [2]
+    relatedProductIds: ['lumina-smart-watch']
   },
   {
     id: '3',
@@ -73,6 +73,6 @@ export const STORIES: Story[] = [
     readTime: '5 min read',
     category: 'Lifestyle',
     tags: ['Home', 'Audio', 'Interior'],
-    relatedProductIds: [3]
+    relatedProductIds: ['nebula-glass-speaker']
   }
 ];

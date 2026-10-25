@@ -1,7 +1,7 @@
 import { User as FirebaseUser } from 'firebase/auth';
 
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   category: string;
@@ -25,7 +25,7 @@ export interface Story {
   readTime: string;
   category: string;
   tags: string[];
-  relatedProductIds: number[];
+  relatedProductIds: string[];
 }
 
 export interface UserProfile {

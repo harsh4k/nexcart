@@ -20,6 +20,7 @@ import { signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
+import { avatarError } from '../avatar';
 
 export default function ProfilePage() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -46,6 +47,11 @@ export default function ProfilePage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    const fileError = avatarError(file);
+    if (fileError) {
+      alert(fileError);
+      return;
+    }
     setIsUploading(true);
     try {
       const storageRef = ref(storage, `profiles/${user.uid}`);
@@ -56,6 +62,7 @@ export default function ProfilePage() {
       window.location.reload();
     } catch (error) {
       console.error('Upload failed:', error);
+      alert('Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }
