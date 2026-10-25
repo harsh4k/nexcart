@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { ArrowRight, ChevronRight, ShoppingCart, Heart, CheckCircle2 } from 'lucide-react';
 import { Product, CartItem } from '../types';
+import { PRODUCTS } from '../data/products';
 
 // --- Components ---
 
@@ -83,14 +84,7 @@ const ImmersiveResponse1 = ({ onAddToCart, products }: { onAddToCart: (p: Produc
   const rotate = useTransform(scrollYProgress, [0, 0.5], [10, 0]);
   const x = useTransform(scrollYProgress, [0, 0.5], [-100, 0]);
 
-  const featuredProduct = products[0] || {
-    id: 1,
-    name: "Nex One Headphones",
-    price: 299,
-    category: "Audio",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000",
-    description: "Immersive sound, redefined. Experience every note with crystal clarity."
-  };
+  const featuredProduct = products[0] || PRODUCTS[0];
 
   return (
     <section ref={containerRef} id="section-1" className="min-h-screen py-24 px-6 bg-white overflow-hidden">
@@ -230,8 +224,8 @@ const ImmersiveResponse2 = () => {
 };
 
 const ImmersiveResponse3 = ({ onAddToCart, onAddToWishlist, wishlist, products, isLoading }: { onAddToCart: (p: Product) => void, onAddToWishlist: (p: Product) => void, wishlist: Product[], products: Product[], isLoading: boolean }) => {
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [addingId, setAddingId] = useState<number | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   const handleAdd = (product: Product) => {
     setAddingId(product.id);

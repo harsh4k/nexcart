@@ -22,36 +22,38 @@ end, looks and feels premium, and is honest: no fabricated data on screen, no fa
 - **Frontend:** React 19, Vite 6, TypeScript 5.8, React Router 7, Tailwind CSS 4 (configured in
   `src/index.css` via `@theme`, no `tailwind.config`), `motion` for animation, `lenis` for smooth scroll,
   `lucide-react` icons.
-- **Auth + user data:** Firebase (Google sign-in, Firestore `users/{uid}`, Storage `profiles/{uid}`).
-  Rules live in `firestore.rules`.
-- **Catalog API:** Express in `server.ts` (`/api/products`, `/api/categories`, `/api/checkout`,
-  `/api/health`). Uses MongoDB via Mongoose when `MONGODB_URI` is set, otherwise serves built-in mock data.
-  In dev the same server mounts Vite as middleware on port 3000.
-- **Deploy:** Vercel (`vercel.json`).
-
-> **Decided 2026-10-25: Firebase only.** Catalog and orders move to Firestore; `server.ts`, Express,
-> MongoDB/Mongoose and `/api/*` are removed in roadmap step 2, and the app deploys to Vercel as a static
-> SPA. Until that PR lands, the Express setup above is still what runs. Don't add new Express routes or
-> Mongo code.
+- **Backend: Firebase only** (decided 2026-10-25). No server of our own.
+  - Auth: Google sign-in.
+  - Firestore: `products/{id}` (public read, console/Admin-only writes) and `users/{uid}` (owner only).
+    Orders will live under `users/{uid}/orders`.
+  - Storage: `profiles/{uid}` avatars.
+  - Rules: `firestore.rules`, `storage.rules` (deploy with the Firebase CLI via `firebase.json`).
+- **Catalog:** `src/catalog.ts` reads Firestore `products`; if the collection is empty, invalid or
+  unreachable (8 s timeout) it falls back to the built-in `src/data/products.ts`, which is also the seed data.
+- **Config:** `VITE_FIREBASE_*` env vars (`.env.example`). Until they are set everywhere,
+  `firebase-applet-config.json` (the original AI Studio project) is the fallback.
+- **Deploy:** Vercel, static SPA (`vercel.json` rewrites every path to `index.html`).
 
 ## Layout
 
 ```
-server.ts              Express API + Vite dev middleware
 src/App.tsx            Router, global state (auth, cart, wishlist, search) and the four drawers
 src/pages/             One file per route: Home, Stories, StoryDetail, About, Film, Checkout, Profile, HelpDesk
 src/components/        Navbar, Footer, Overlay (side drawer), ScrollHub, LoadingScreen, SmoothScroll, FeedbackWidget
+src/data/products.ts   Built-in catalog / Firestore seed (IDs are slugs)
 src/data/stories.ts    Editorial content for /stories
+src/catalog.ts         fetchProducts(): Firestore with built-in fallback
 src/types.ts           Product, CartItem, Story, UserProfile
 src/firebase.ts        Firebase app, auth, db, storage
 firestore.rules        Firestore security rules
+storage.rules          Storage security rules
 ```
 
 ## Commands
 
 ```bash
 npm install
-npm run dev        # Express + Vite on http://localhost:3000 (mock catalog without MONGODB_URI)
+npm run dev        # Vite on http://localhost:3000 (built-in catalog if Firestore has none)
 npm run lint       # currently tsc --noEmit (typecheck only)
 npm run build      # vite build -> dist/
 npm run preview
@@ -86,7 +88,7 @@ Env vars are documented in `.env.example`. Never commit `.env`.
 Ordered PRs from the 2026-10-25 audit:
 
 1. Foundation: fix lockfile, patch vulnerable deps, drop unused deps, ESLint + Vitest, GitHub Actions CI.
-2. Backend + deploy: move catalog and orders to Firestore, remove Express/Mongo, env-based Firebase config,
+2. Backend + deploy (done): Firestore catalog, Express/Mongo removed, env-based Firebase config,
    tighter Firestore/Storage rules, static SPA deploy on Vercel.
 3. Store core: split `App.tsx` state into hooks, product detail page, working search, category filter.
 4. Real checkout and orders: validated form, persisted orders, real Profile data, toasts instead of `alert()`.

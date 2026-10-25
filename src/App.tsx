@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firest
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import { Product, CartItem } from './types';
+import { fetchProducts } from './catalog';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Overlay } from './components/Overlay';
@@ -70,51 +71,28 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const baseUrl = import.meta.env.VITE_API_URL || '';
-        const endpoint = `${baseUrl}/api/products`;
-        
-        const response = await fetch(endpoint, { signal: controller.signal });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          setProducts([]);
-        }
-      } catch (error: any) {
-        if (error?.name === 'AbortError') {
-          console.warn('NexCart: Product fetch timed out, using empty catalog');
-        } else {
-          console.error('NexCart: Failed to fetch products:', error);
-        }
-        setProducts([]);
-      } finally {
-        clearTimeout(timeoutId);
-        setIsLoading(false);
-      }
-    };
-    fetchProducts();
-
-    return () => { clearTimeout(timeoutId); controller.abort(); };
+    let cancelled = false;
+    fetchProducts().then((data) => {
+      if (cancelled) return;
+      setProducts(data);
+      setIsLoading(false);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedCart = localStorage.getItem('nexcart_cart');
       const savedWishlist = localStorage.getItem('nexcart_wishlist');
-      if (savedCart) setCart(JSON.parse(savedCart));
-      if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
+      // Items saved before product IDs became strings can't be matched to the catalog; drop them.
+      const hasStringId = (item: { id?: unknown }) => typeof item?.id === 'string';
+      try {
+        if (savedCart) setCart((JSON.parse(savedCart) as CartItem[]).filter(hasStringId));
+        if (savedWishlist) setWishlist((JSON.parse(savedWishlist) as Product[]).filter(hasStringId));
+      } catch {
+        localStorage.removeItem('nexcart_cart');
+        localStorage.removeItem('nexcart_wishlist');
+      }
     }
   }, []);
 
@@ -136,11 +114,11 @@ function AppContent() {
     });
   };
 
-  const removeFromCart = (id: number) => {
+  const removeFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const updateQuantity = (id: number, delta: number) => {
+  const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
         const newQty = Math.max(1, item.quantity + delta);
