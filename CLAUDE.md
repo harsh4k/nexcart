@@ -29,8 +29,10 @@ end, looks and feels premium, and is honest: no fabricated data on screen, no fa
   In dev the same server mounts Vite as middleware on port 3000.
 - **Deploy:** Vercel (`vercel.json`).
 
-> The backend direction (Firebase-only vs Express + MongoDB) is an open decision in the audit doc.
-> Update this section when it is settled.
+> **Decided 2026-10-25: Firebase only.** Catalog and orders move to Firestore; `server.ts`, Express,
+> MongoDB/Mongoose and `/api/*` are removed in roadmap step 2, and the app deploys to Vercel as a static
+> SPA. Until that PR lands, the Express setup above is still what runs. Don't add new Express routes or
+> Mongo code.
 
 ## Layout
 
@@ -84,7 +86,8 @@ Env vars are documented in `.env.example`. Never commit `.env`.
 Ordered PRs from the 2026-10-25 audit:
 
 1. Foundation: fix lockfile, patch vulnerable deps, drop unused deps, ESLint + Vitest, GitHub Actions CI.
-2. Backend + deploy: settle backend direction, env-based Firebase config, tighter rules, SPA routing on Vercel.
+2. Backend + deploy: move catalog and orders to Firestore, remove Express/Mongo, env-based Firebase config,
+   tighter Firestore/Storage rules, static SPA deploy on Vercel.
 3. Store core: split `App.tsx` state into hooks, product detail page, working search, category filter.
 4. Real checkout and orders: validated form, persisted orders, real Profile data, toasts instead of `alert()`.
 5. Accessibility and design polish.
