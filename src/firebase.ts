@@ -6,19 +6,25 @@ import fallbackConfig from '../firebase-applet-config.json';
 
 const env = import.meta.env;
 
-// VITE_FIREBASE_* env vars take precedence. Until they are set in every
-// environment (including Vercel), the committed config keeps the app working.
-const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || fallbackConfig.apiKey,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || fallbackConfig.authDomain,
-  projectId: env.VITE_FIREBASE_PROJECT_ID || fallbackConfig.projectId,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || fallbackConfig.storageBucket,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || fallbackConfig.messagingSenderId,
-  appId: env.VITE_FIREBASE_APP_ID || fallbackConfig.appId,
-};
+// All-or-nothing: when VITE_FIREBASE_PROJECT_ID is set, every value comes from
+// VITE_FIREBASE_* env vars, so a partial env can never mix two projects. Until
+// env vars are set everywhere (including Vercel), the committed config of the
+// original AI Studio project is used as a whole.
+const useEnv = Boolean(env.VITE_FIREBASE_PROJECT_ID);
+
+const firebaseConfig = useEnv
+  ? {
+      apiKey: env.VITE_FIREBASE_API_KEY,
+      authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: env.VITE_FIREBASE_APP_ID,
+    }
+  : fallbackConfig;
 
 // Empty means the project's (default) Firestore database.
-const firestoreDatabaseId = env.VITE_FIREBASE_PROJECT_ID
+const firestoreDatabaseId = useEnv
   ? env.VITE_FIRESTORE_DATABASE_ID || undefined
   : fallbackConfig.firestoreDatabaseId;
 

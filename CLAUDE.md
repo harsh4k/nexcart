@@ -28,10 +28,12 @@ end, looks and feels premium, and is honest: no fabricated data on screen, no fa
     Orders will live under `users/{uid}/orders`.
   - Storage: `profiles/{uid}` avatars.
   - Rules: `firestore.rules`, `storage.rules` (deploy with the Firebase CLI via `firebase.json`).
+    `firebase.json` targets the AI Studio project's named Firestore database; switch it to `(default)`
+    if the app moves to a fresh Firebase project.
 - **Catalog:** `src/catalog.ts` reads Firestore `products`; if the collection is empty, invalid or
   unreachable (8 s timeout) it falls back to the built-in `src/data/products.ts`, which is also the seed data.
-- **Config:** `VITE_FIREBASE_*` env vars (`.env.example`). Until they are set everywhere,
-  `firebase-applet-config.json` (the original AI Studio project) is the fallback.
+- **Config:** `VITE_FIREBASE_*` env vars (`.env.example`), all or none. When `VITE_FIREBASE_PROJECT_ID`
+  is unset, `firebase-applet-config.json` (the original AI Studio project) is used as a whole.
 - **Deploy:** Vercel, static SPA (`vercel.json` rewrites every path to `index.html`).
 
 ## Layout
@@ -43,6 +45,7 @@ src/components/        Navbar, Footer, Overlay (side drawer), ScrollHub, Loading
 src/data/products.ts   Built-in catalog / Firestore seed (IDs are slugs)
 src/data/stories.ts    Editorial content for /stories
 src/catalog.ts         fetchProducts(): Firestore with built-in fallback
+src/avatar.ts          Client-side check that mirrors storage.rules for avatars
 src/types.ts           Product, CartItem, Story, UserProfile
 src/firebase.ts        Firebase app, auth, db, storage
 firestore.rules        Firestore security rules

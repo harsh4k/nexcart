@@ -9,6 +9,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import { Product, CartItem } from './types';
 import { fetchProducts } from './catalog';
+import { avatarError } from './avatar';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Overlay } from './components/Overlay';
@@ -26,6 +27,18 @@ const CheckoutPage = React.lazy(() => import('./pages/Checkout'));
 const ProfilePage = React.lazy(() => import('./pages/Profile'));
 const HelpDeskPage = React.lazy(() => import('./pages/HelpDesk'));
 
+// Reads a saved cart or wishlist. Items saved before product IDs became strings
+// can't be matched to the catalog, so they are dropped.
+function loadSaved<T extends { id: string }>(key: string): T[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is T => typeof item?.id === 'string');
+  } catch {
+    return [];
+  }
+}
+
 function AppContent() {
   const [activeSection, setActiveSection] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -33,8 +46,8 @@ function AppContent() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => loadSaved<CartItem>('nexcart_cart'));
+  const [wishlist, setWishlist] = useState<Product[]>(() => loadSaved<Product>('nexcart_wishlist'));
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -53,18 +66,22 @@ function AppContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      if (firebaseUser) {
+      if (!firebaseUser) return;
+      try {
         const userRef = doc(db, 'users', firebaseUser.uid);
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) {
+          // firestore.rules rejects null fields, so only include the ones that are set.
           await setDoc(userRef, {
             uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName,
             email: firebaseUser.email,
-            photoURL: firebaseUser.photoURL,
+            ...(firebaseUser.displayName ? { displayName: firebaseUser.displayName } : {}),
+            ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
             createdAt: serverTimestamp()
           });
         }
+      } catch (error) {
+        console.error('NexCart: could not create the user profile document.', error);
       }
     });
     return () => unsubscribe();
@@ -78,22 +95,6 @@ function AppContent() {
       setIsLoading(false);
     });
     return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedCart = localStorage.getItem('nexcart_cart');
-      const savedWishlist = localStorage.getItem('nexcart_wishlist');
-      // Items saved before product IDs became strings can't be matched to the catalog; drop them.
-      const hasStringId = (item: { id?: unknown }) => typeof item?.id === 'string';
-      try {
-        if (savedCart) setCart((JSON.parse(savedCart) as CartItem[]).filter(hasStringId));
-        if (savedWishlist) setWishlist((JSON.parse(savedWishlist) as Product[]).filter(hasStringId));
-      } catch {
-        localStorage.removeItem('nexcart_cart');
-        localStorage.removeItem('nexcart_wishlist');
-      }
-    }
   }, []);
 
   useEffect(() => {
@@ -166,6 +167,11 @@ function AppContent() {
   const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    const fileError = avatarError(file);
+    if (fileError) {
+      alert(fileError);
+      return;
+    }
     setIsUploading(true);
     try {
       const storageRef = ref(storage, `profiles/${user.uid}`);
@@ -175,6 +181,7 @@ function AppContent() {
       alert('Profile picture updated!');
     } catch (error) {
       console.error('Upload failed:', error);
+      alert('Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }
