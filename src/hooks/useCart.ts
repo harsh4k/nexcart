@@ -32,12 +32,27 @@ export function useCart() {
     ));
   }, []);
 
+  /** Updates name, price and image from the live catalog. Items missing from it are kept for checkout to flag. */
+  const syncWithCatalog = useCallback((products: Product[]) => {
+    const byId = new Map(products.map(product => [product.id, product]));
+    setItems(prev => {
+      let changed = false;
+      const next = prev.map(item => {
+        const product = byId.get(item.id);
+        if (!product || (product.price === item.price && product.name === item.name && product.image === item.image)) return item;
+        changed = true;
+        return { ...item, name: product.name, price: product.price, image: product.image };
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+
   const clear = useCallback(() => setItems([]), []);
 
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
   const count = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
-  return { items, add, remove, updateQuantity, clear, total, count };
+  return { items, add, remove, updateQuantity, syncWithCatalog, clear, total, count };
 }
 
 export type Cart = ReturnType<typeof useCart>;

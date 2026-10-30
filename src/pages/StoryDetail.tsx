@@ -4,10 +4,12 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import { ArrowLeft, Clock, Calendar, Tag, Share2, ChevronRight, ShoppingCart, Heart } from 'lucide-react';
 import { STORIES } from '../data/stories';
 import { Product, Story } from '../types';
+import { useToast } from '../components/Toast';
 
 export default function StoryDetailPage({ onAddToCart, products }: { onAddToCart: (p: Product) => void, products: Product[] }) {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const notify = useToast();
   const { scrollYProgress } = useScroll();
   
   const story = useMemo(() => STORIES.find(s => s.slug === slug), [slug]);
@@ -30,16 +32,18 @@ export default function StoryDetailPage({ onAddToCart, products }: { onAddToCart
     );
   }
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    const url = window.location.href;
     if (navigator.share) {
-      navigator.share({
-        title: story.title,
-        text: story.excerpt,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      // Rejects when the user dismisses the share sheet; nothing to report.
+      await navigator.share({ title: story.title, text: story.excerpt, url }).catch(() => {});
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      notify('Link copied to clipboard.', 'success');
+    } catch {
+      notify('Could not copy the link.', 'error');
     }
   };
 

@@ -2,11 +2,10 @@ import { useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Camera, Loader2, LogOut, ChevronRight } from 'lucide-react';
 import { signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Overlay } from '../Overlay';
-import { auth, db, storage } from '../../firebase';
-import { avatarError } from '../../avatar';
+import { auth } from '../../firebase';
+import { avatarError, uploadAvatar } from '../../avatar';
+import { useToast } from '../Toast';
 
 interface AccountDrawerProps {
   isOpen: boolean;
@@ -16,6 +15,9 @@ interface AccountDrawerProps {
 
 export const AccountDrawer = ({ isOpen, onClose, user }: AccountDrawerProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  // updateProfile() changes user.photoURL in place without a re-render, so keep the new URL here.
+  const [uploadedPhoto, setUploadedPhoto] = useState<{ uid: string; url: string } | null>(null);
+  const notify = useToast();
   const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
@@ -27,9 +29,9 @@ export const AccountDrawer = ({ isOpen, onClose, user }: AccountDrawerProps) => 
     } catch (error: any) {
       console.error('Sign in failed:', error);
       if (error.code === 'auth/popup-blocked') {
-        alert('Please enable popups for this site to sign in.');
+        notify('Please allow pop-ups for this site to sign in.', 'error');
       } else if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        alert(`Sign in failed: ${error.message}`);
+        notify('Sign-in failed. Please try again.', 'error');
       }
     }
   };
@@ -45,26 +47,26 @@ export const AccountDrawer = ({ isOpen, onClose, user }: AccountDrawerProps) => 
 
   const handleProfileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !user) return;
     const fileError = avatarError(file);
     if (fileError) {
-      alert(fileError);
+      notify(fileError, 'error');
       return;
     }
     setIsUploading(true);
     try {
-      const storageRef = ref(storage, `profiles/${user.uid}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await updateDoc(doc(db, 'users', user.uid), { photoURL: url });
-      alert('Profile picture updated!');
+      setUploadedPhoto({ uid: user.uid, url: await uploadAvatar(user, file) });
+      notify('Profile photo updated.', 'success');
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
+      notify('Upload failed. Please try again.', 'error');
     } finally {
       setIsUploading(false);
     }
   };
+
+  const photoURL = user && uploadedPhoto?.uid === user.uid ? uploadedPhoto.url : user?.photoURL;
 
   return (
     <Overlay isOpen={isOpen} onClose={onClose} title="Account">
@@ -92,13 +94,13 @@ export const AccountDrawer = ({ isOpen, onClose, user }: AccountDrawerProps) => 
                   <div className="w-full h-full flex items-center justify-center bg-gray-100">
                     <Loader2 className="animate-spin text-black" />
                   </div>
-                ) : !user.photoURL ? (
+                ) : !photoURL ? (
                   <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
                     <User size={40} aria-hidden="true" />
                   </div>
                 ) : (
                   <img
-                    src={user.photoURL}
+                    src={photoURL}
                     alt="Profile"
                     loading="lazy"
                     className="w-full h-full object-cover"
