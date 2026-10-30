@@ -39,9 +39,13 @@ end, looks and feels premium, and is honest: no fabricated data on screen, no fa
 ## Layout
 
 ```
-src/App.tsx            Router, global state (auth, cart, wishlist, search) and the four drawers
-src/pages/             One file per route: Home, Stories, StoryDetail, About, Film, Checkout, Profile, HelpDesk
+src/App.tsx            Router and wiring: calls the hooks, picks the open drawer, passes props to routes
+src/hooks/             useCart, useWishlist (localStorage via storage.ts), useAuthUser, useCatalog
+src/pages/             One file per route: Home, Product (/products/:id), Stories, StoryDetail, About, Film,
+                       Checkout, Profile, HelpDesk
 src/components/        Navbar, Footer, Overlay (side drawer), ScrollHub, LoadingScreen, SmoothScroll, FeedbackWidget
+src/components/drawers/ Cart, Wishlist, Account and Search drawers (all built on Overlay)
+src/productFilters.ts  categoriesOf() and matchesQuery(), shared by the catalog filter and search
 src/data/products.ts   Built-in catalog / Firestore seed (IDs are slugs)
 src/data/stories.ts    Editorial content for /stories
 src/catalog.ts         fetchProducts(): Firestore with built-in fallback
@@ -70,6 +74,9 @@ Env vars are documented in `.env.example`. Never commit `.env`.
   rounded cards (`rounded-3xl`/`rounded-[2.5rem]`), generous whitespace. Refine it; don't replace it.
 - Tailwind utilities in JSX; shared values (colors, radii, fonts) belong in `@theme` in `src/index.css`.
 - Pages are lazy-loaded in `App.tsx`; keep new routes lazy.
+- Catalog links: `/products/:id` for a product, `/#shop` for the catalog, `/?category=<name>#shop` for a
+  filtered catalog. Home scrolls to the catalog when the hash is `#shop`.
+- Cart quantities are capped at `MAX_QUANTITY` (10) inside `useCart`.
 - Reuse `Overlay` for drawers and existing types from `src/types.ts`; don't add parallel ones.
 - Every interactive element needs a visible label (or `aria-label`), a `:focus-visible` state, and must be
   a real `<button>`/`<a>`. Respect `prefers-reduced-motion`.
@@ -93,7 +100,7 @@ Ordered PRs from the 2026-10-25 audit:
 1. Foundation: fix lockfile, patch vulnerable deps, drop unused deps, ESLint + Vitest, GitHub Actions CI.
 2. Backend + deploy (done): Firestore catalog, Express/Mongo removed, env-based Firebase config,
    tighter Firestore/Storage rules, static SPA deploy on Vercel.
-3. Store core: split `App.tsx` state into hooks, product detail page, working search, category filter.
+3. Store core (done): `App.tsx` state split into hooks, product detail page, working search, category filter.
 4. Real checkout and orders: validated form, persisted orders, real Profile data, toasts instead of `alert()`.
 5. Accessibility and design polish.
 6. Performance: lazy Firebase, compressed media, font loading.

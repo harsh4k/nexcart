@@ -209,7 +209,7 @@ export default function AboutPage() {
             <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-8">Ready to experience <br /> the future?</h2>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <Link 
-                to="/#section-3" 
+                to="/#shop" 
                 className="px-10 py-5 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform flex items-center justify-center gap-2"
               >
                 Explore Shop <ArrowRight size={20} />

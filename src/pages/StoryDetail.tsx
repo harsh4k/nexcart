@@ -123,9 +123,13 @@ export default function StoryDetailPage({ onAddToCart, products }: { onAddToCart
               <div className="grid md:grid-cols-2 gap-8">
                 {relatedProducts.map(product => (
                   <div key={product.id} className="bg-white p-6 rounded-3xl flex gap-6 items-center shadow-sm hover:shadow-md transition-all">
-                    <img src={product.image} loading="lazy" className="w-24 h-24 object-cover rounded-2xl" referrerPolicy="no-referrer" />
+                    <Link to={`/products/${product.id}`} className="shrink-0" tabIndex={-1} aria-hidden="true">
+                      <img src={product.image} alt="" loading="lazy" className="w-24 h-24 object-cover rounded-2xl" referrerPolicy="no-referrer" />
+                    </Link>
                     <div className="flex-1">
-                      <h4 className="font-bold text-lg mb-1">{product.name}</h4>
+                      <h4 className="font-bold text-lg mb-1">
+                        <Link to={`/products/${product.id}`} className="hover:text-gray-600 transition-colors">{product.name}</Link>
+                      </h4>
                       <p className="text-sm text-gray-500 mb-4">${product.price}</p>
                       <button 
                         onClick={() => onAddToCart(product)}

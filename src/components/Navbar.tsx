@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag } from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
 
@@ -16,6 +16,7 @@ interface NavbarProps {
 export const Navbar = ({ onOpenCart, onOpenWishlist, onOpenProfile, onOpenSearch, cartCount, wishlistCount, user }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const isHomePage = location.pathname === '/';
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export const Navbar = ({ onOpenCart, onOpenWishlist, onOpenProfile, onOpenSearch
                 if (isHomePage) {
                   document.getElementById('section-3')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                  window.location.href = '/#section-3';
+                  navigate('/#shop');
                 }
               }}
               className="hover:text-gray-500 transition-colors cursor-pointer"

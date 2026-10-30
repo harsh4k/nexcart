@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
-import { ArrowRight, ChevronRight, ShoppingCart, Heart, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ShoppingCart, Heart, CheckCircle2 } from 'lucide-react';
 import { Product, CartItem } from '../types';
 import { PRODUCTS } from '../data/products';
+import { categoriesOf } from '../productFilters';
 
 // --- Components ---
 
@@ -226,6 +227,26 @@ const ImmersiveResponse2 = () => {
 const ImmersiveResponse3 = ({ onAddToCart, onAddToWishlist, wishlist, products, isLoading }: { onAddToCart: (p: Product) => void, onAddToWishlist: (p: Product) => void, wishlist: Product[], products: Product[], isLoading: boolean }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  const categories = useMemo(() => categoriesOf(products), [products]);
+  const requested = searchParams.get('category');
+  const activeCategory = requested && categories.includes(requested) ? requested : null;
+  const visibleProducts = activeCategory ? products.filter(p => p.category === activeCategory) : products;
+
+  const selectCategory = (category: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (category) next.set('category', category);
+    else next.delete('category');
+    setSearchParams(next, { replace: true, preventScrollReset: true });
+  };
+
+  // Links like /#shop or /?category=Audio#shop land on the catalog once it has rendered.
+  useEffect(() => {
+    if (isLoading || location.hash !== '#shop') return;
+    document.getElementById('section-3')?.scrollIntoView({ behavior: 'smooth' });
+  }, [isLoading, location.hash, location.key]);
 
   const handleAdd = (product: Product) => {
     setAddingId(product.id);
@@ -249,10 +270,25 @@ const ImmersiveResponse3 = ({ onAddToCart, onAddToWishlist, wishlist, products, 
             <h2 className="text-4xl font-bold tracking-tight mb-2">Curated Catalog</h2>
             <p className="text-gray-500">Handpicked for the modern lifestyle.</p>
           </div>
-          <button className="text-sm font-bold flex items-center gap-2 hover:gap-3 transition-all">
-            View All <ChevronRight size={16} />
-          </button>
         </div>
+
+        {categories.length > 1 && (
+          <div className="flex flex-wrap gap-2 -mt-4 mb-10" role="group" aria-label="Filter by category">
+            {[null, ...categories].map(category => {
+              const isActive = category === activeCategory;
+              return (
+                <button
+                  key={category ?? 'all'}
+                  onClick={() => selectCategory(category)}
+                  aria-pressed={isActive}
+                  className={`px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${isActive ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-100 shadow-sm'}`}
+                >
+                  {category ?? 'All'}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-8">
           {products.length === 0 ? (
@@ -260,7 +296,7 @@ const ImmersiveResponse3 = ({ onAddToCart, onAddToWishlist, wishlist, products, 
               <p className="text-gray-500 font-medium">Our catalog is currently being updated. Please check back soon.</p>
             </div>
           ) : (
-            products.map((product, idx) => {
+            visibleProducts.map((product, idx) => {
               const isInWishlist = wishlist.some(item => item.id === product.id);
               return (
                 <motion.div 
@@ -274,23 +310,25 @@ const ImmersiveResponse3 = ({ onAddToCart, onAddToWishlist, wishlist, products, 
                   onMouseLeave={() => setHoveredId(null)}
                   className="group relative bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
                 >
-                  <div className="aspect-[4/5] overflow-hidden">
+                  <Link to={`/products/${product.id}`} className="block aspect-[4/5] overflow-hidden" tabIndex={-1} aria-hidden="true">
                     <motion.img 
                       animate={{ scale: hoveredId === product.id ? 1.1 : 1 }}
                       transition={{ duration: 0.6 }}
                       src={product.image} 
-                      alt={product.name}
+                      alt=""
                       loading="lazy"
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
-                  </div>
+                  </Link>
                   
                   <div className="p-8">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{product.category}</p>
-                        <h4 className="text-xl font-bold">{product.name}</h4>
+                        <h4 className="text-xl font-bold">
+                          <Link to={`/products/${product.id}`} className="hover:text-gray-600 transition-colors">{product.name}</Link>
+                        </h4>
                       </div>
                       <p className="text-xl font-bold">${product.price}</p>
                     </div>
@@ -315,6 +353,8 @@ const ImmersiveResponse3 = ({ onAddToCart, onAddToWishlist, wishlist, products, 
                       </motion.button>
                       <button 
                         onClick={() => onAddToWishlist(product)}
+                        aria-pressed={isInWishlist}
+                        aria-label={isInWishlist ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
                         className={`p-3 border rounded-xl transition-colors ${isInWishlist ? 'bg-red-50 border-red-200 text-red-500' : 'border-gray-200 hover:bg-gray-50'}`}
                       >
                         <Heart size={16} fill={isInWishlist ? 'currentColor' : 'none'} />
