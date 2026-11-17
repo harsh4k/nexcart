@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, MotionConfig } from 'motion/react';
 
 import { useCart } from './hooks/useCart';
 import { useWishlist } from './hooks/useWishlist';
@@ -16,6 +16,7 @@ import { CartDrawer } from './components/drawers/CartDrawer';
 import { WishlistDrawer } from './components/drawers/WishlistDrawer';
 import { AccountDrawer } from './components/drawers/AccountDrawer';
 import { SearchDrawer } from './components/drawers/SearchDrawer';
+import { ToastProvider } from './components/Toast';
 
 const HomePage = React.lazy(() => import('./pages/Home'));
 const ProductPage = React.lazy(() => import('./pages/Product'));
@@ -36,6 +37,12 @@ function AppContent() {
   const wishlist = useWishlist();
   const user = useAuthUser();
   const { products, isLoading } = useCatalog();
+  const { syncWithCatalog } = cart;
+
+  // Keep saved cart prices in line with the live catalog everywhere the cart is shown.
+  useEffect(() => {
+    if (!isLoading) syncWithCatalog(products);
+  }, [isLoading, products, syncWithCatalog]);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -106,8 +113,18 @@ function AppContent() {
             <Route path="/stories/:slug" element={<StoryDetailPage onAddToCart={cart.add} products={products} />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/film" element={<FilmPage />} />
-            <Route path="/checkout" element={<CheckoutPage cart={cart.items} total={cart.total} onClearCart={cart.clear} />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/checkout" element={
+              <CheckoutPage
+                cart={cart.items}
+                products={products}
+                isLoading={isLoading}
+                user={user}
+                onRequestSignIn={() => setOpenDrawer('account')}
+                onRemoveItem={cart.remove}
+                onClearCart={cart.clear}
+              />
+            } />
+            <Route path="/profile" element={<ProfilePage wishlistCount={wishlist.items.length} />} />
             <Route path="/helpdesk" element={<HelpDeskPage />} />
           </Routes>
         </Suspense>
@@ -127,7 +144,12 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
-      <AppContent />
+      {/* Honour the OS "reduce motion" setting for every motion animation. */}
+      <MotionConfig reducedMotion="user">
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </MotionConfig>
     </Router>
   );
 }

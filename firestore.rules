@@ -38,6 +38,29 @@ service cloud.firestore {
              (!('orders' in data) || data.orders is list);
     }
 
+    // Demo orders. Prices are copied from the catalog by the client; no payment is taken.
+    function isValidShipping(s) {
+      return s is map &&
+             s.keys().hasAll(['name', 'address', 'city', 'region', 'postalCode']) &&
+             s.keys().hasOnly(['name', 'address', 'city', 'region', 'postalCode']) &&
+             s.name is string && s.name.size() > 0 && s.name.size() <= 100 &&
+             s.address is string && s.address.size() > 0 && s.address.size() <= 200 &&
+             s.city is string && s.city.size() > 0 && s.city.size() <= 100 &&
+             s.region is string && s.region.size() > 0 && s.region.size() <= 100 &&
+             s.postalCode is string && s.postalCode.size() >= 3 && s.postalCode.size() <= 12;
+    }
+
+    function isValidOrder(o) {
+      return o.keys().hasAll(['items', 'itemCount', 'total', 'shipping', 'status', 'createdAt']) &&
+             o.keys().hasOnly(['items', 'itemCount', 'total', 'shipping', 'status', 'createdAt']) &&
+             o.items is list && o.items.size() > 0 && o.items.size() <= 50 &&
+             o.itemCount is int && o.itemCount > 0 && o.itemCount <= 500 &&
+             o.total is number && o.total >= 0 &&
+             isValidShipping(o.shipping) &&
+             o.status == 'placed' &&
+             o.createdAt == request.time;
+    }
+
     // Catalog: public read. Writes only through the Firebase console or Admin SDK.
     match /products/{productId} {
       allow read: if true;
@@ -51,6 +74,13 @@ service cloud.firestore {
                     request.resource.data.uid == resource.data.uid &&
                     request.resource.data.email == resource.data.email;
       allow delete: if false;
+
+      // Orders are immutable once placed.
+      match /orders/{orderId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidOrder(request.resource.data);
+        allow update, delete: if false;
+      }
     }
   }
 }
