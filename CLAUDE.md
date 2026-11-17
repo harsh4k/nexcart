@@ -27,8 +27,7 @@ end, looks and feels premium, and is honest: no fabricated data on screen, no fa
   - Firestore: `products/{id}` (public read, console/Admin-only writes) and `users/{uid}` (owner only).
     Demo orders live in `users/{uid}/orders` (owner create/read, immutable, `createdAt` = server time).
     Checkout needs sign-in; no payment is taken.
-  - Storage: `profiles/{uid}` avatars.
-  - Rules: `firestore.rules`, `storage.rules` (deploy with the Firebase CLI via `firebase.json`).
+  - Rules: `firestore.rules` (deploy with the Firebase CLI via `firebase.json`).
     `firebase.json` targets the AI Studio project's named Firestore database; switch it to `(default)`
     if the app moves to a fresh Firebase project.
 - **Catalog:** `src/catalog.ts` reads Firestore `products`; if the collection is empty, invalid or
@@ -53,11 +52,9 @@ src/orders.ts          Shipping validation, priceCart() against the catalog, pla
 src/data/products.ts   Built-in catalog / Firestore seed (IDs are slugs)
 src/data/stories.ts    Editorial content for /stories
 src/catalog.ts         fetchProducts(): Firestore with built-in fallback
-src/avatar.ts          Client-side check that mirrors storage.rules for avatars
 src/types.ts           Product, CartItem, Story, UserProfile
-src/firebase.ts        Firebase app, auth, db, storage
+src/firebase.ts        Firebase app, auth, db
 firestore.rules        Firestore security rules
-storage.rules          Storage security rules
 ```
 
 ## Commands
@@ -74,6 +71,7 @@ Env vars are documented in `.env.example`. Never commit `.env`.
 
 ## Conventions
 
+- No Firebase Storage (paid plan); profile photos come from the sign-in provider.
 - Match the existing visual language: monochrome (black/white/gray), Inter, large tight-tracked headings,
   rounded cards (`rounded-3xl`/`rounded-[2.5rem]`), generous whitespace. Refine it; don't replace it.
 - Tailwind utilities in JSX; shared values (colors, radii, fonts) belong in `@theme` in `src/index.css`.
@@ -105,7 +103,7 @@ Ordered PRs from the 2026-10-25 audit:
 
 1. Foundation: fix lockfile, patch vulnerable deps, drop unused deps, ESLint + Vitest, GitHub Actions CI.
 2. Backend + deploy (done): Firestore catalog, Express/Mongo removed, env-based Firebase config,
-   tighter Firestore/Storage rules, static SPA deploy on Vercel.
+   tighter Firestore rules, static SPA deploy on Vercel.
 3. Store core (done): `App.tsx` state split into hooks, product detail page, working search, category filter.
 4. Real checkout and orders (done): validated form, persisted orders, real Profile data, toasts instead of `alert()`.
 5. Accessibility and design polish.

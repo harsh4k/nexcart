@@ -26,7 +26,7 @@ It avoids unnecessary complexity while delivering the core functionality expecte
 * Google authentication
 * Order management system
 * Fast frontend deployment (Vercel)
-* Serverless backend on Firebase (Auth, Firestore, Storage)
+* Serverless backend on Firebase (Auth, Firestore)
 * Minimal and clean UI
 
 ---
@@ -40,7 +40,7 @@ It avoids unnecessary complexity while delivering the core functionality expecte
 ### Backend
 - Firebase Auth (Google sign-in)
 - Cloud Firestore (catalog, user profiles)
-- Firebase Storage (profile photos)
+- Profile photos from the sign-in provider
 
 ## Setup
 ```powershell
