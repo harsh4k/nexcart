@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { Camera, Loader2, LogOut, Package, RotateCcw, User } from 'lucide-react';
+import { Loader2, LogOut, Package, RotateCcw, User } from 'lucide-react';
 import { auth } from '../firebase';
-import { avatarError, uploadAvatar } from '../avatar';
 import { fetchOrders, formatPrice, Order, orderRef } from '../orders';
-import { useToast } from '../components/Toast';
 
 interface ProfilePageProps {
   wishlistCount: number;
@@ -15,12 +13,10 @@ const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
 
 export default function ProfilePage({ wishlistCount }: ProfilePageProps) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [photoURL, setPhotoURL] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [failedPhotoURL, setFailedPhotoURL] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [ordersError, setOrdersError] = useState(false);
   const navigate = useNavigate();
-  const notify = useToast();
 
   useEffect(() => onAuthStateChanged(auth, (u) => {
     if (!u) {
@@ -28,7 +24,6 @@ export default function ProfilePage({ wishlistCount }: ProfilePageProps) {
       return;
     }
     setUser(u);
-    setPhotoURL(u.photoURL);
   }), [navigate]);
 
   const loadOrders = useCallback(async (uid: string) => {
@@ -51,53 +46,28 @@ export default function ProfilePage({ wishlistCount }: ProfilePageProps) {
     navigate('/');
   };
 
-  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file || !user) return;
-    const fileError = avatarError(file);
-    if (fileError) {
-      notify(fileError, 'error');
-      return;
-    }
-    setIsUploading(true);
-    try {
-      setPhotoURL(await uploadAvatar(user, file));
-      notify('Profile photo updated.', 'success');
-    } catch (error) {
-      console.error('NexCart: avatar upload failed.', error);
-      notify('Upload failed. Please try again.', 'error');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   if (!user) return null;
+  const photoURL = user.photoURL;
 
   return (
     <main className="pt-28 md:pt-32 pb-24 px-6 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8 lg:gap-12 items-start">
         <aside className="space-y-4 lg:sticky lg:top-28">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm text-center">
-            <div className="relative inline-block">
-              <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-gray-50 shadow-xl mx-auto bg-gray-100">
-                {isUploading ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Loader2 className="animate-spin text-black" aria-label="Uploading photo" />
-                  </div>
-                ) : photoURL ? (
-                  <img src={photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <User size={48} aria-hidden="true" />
-                  </div>
-                )}
-              </div>
-              <label className="absolute bottom-0 right-0 p-3 bg-black text-white rounded-full cursor-pointer hover:bg-gray-800 transition-colors shadow-lg focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-black">
-                <Camera size={18} aria-hidden="true" />
-                <span className="sr-only">Change profile photo</span>
-                <input type="file" className="sr-only" accept="image/*" onChange={handleUpload} disabled={isUploading} />
-              </label>
+            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-gray-50 shadow-xl mx-auto bg-gray-100">
+              {photoURL && photoURL !== failedPhotoURL ? (
+                <img
+                  src={photoURL}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={() => setFailedPhotoURL(photoURL)}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <User size={48} aria-hidden="true" />
+                </div>
+              )}
             </div>
             <h1 className="mt-6 text-2xl font-bold tracking-tight">{user.displayName || 'Your account'}</h1>
             {user.email && <p className="text-gray-500 text-sm">{user.email}</p>}
