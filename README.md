@@ -1,90 +1,29 @@
 # NexCart
 
-### Minimal • Fast • Clean
+A demo storefront for audio gear built with React, TypeScript, Vite, and Firebase.
+Browse and filter the catalog, save products to a wishlist, and try checkout
+with a Google account. Demo orders use Firestore. Checkout charges no money.
 
----
+[Live demo](https://nexcart-v1.vercel.app/)
 
-## Banner
+## Run locally
 
-<img width="1878" height="687" alt="image" src="https://github.com/user-attachments/assets/a58a60a9-27cc-4c6f-82bb-3e37ef1838cd" />
-
----
-
-## Overview
-
-NexCart is a modern full-stack e-commerce application focused on clean design, fast performance, and a distraction-free user experience.
-
-It avoids unnecessary complexity while delivering the core functionality expected from a real-world commerce platform.
-
----
-
-
-## Features
-
-* Product listing with dynamic rendering
-* Add to cart with persistent state
-* Google authentication
-* Order management system
-* Fast frontend deployment (Vercel)
-* Serverless backend on Firebase (Auth, Firestore)
-* Minimal and clean UI
-
----
-
-## Tech Stack
-### Frontend
-- React 19 + Vite 6
-- Tailwind CSS 4
-- React Router
-
-### Backend
-- Firebase Auth (Google sign-in)
-- Cloud Firestore (catalog, user profiles)
-- Profile photos from the sign-in provider
-
-## Setup
-```powershell
-npm install
-# optional: configure Firebase in .env (see .env.example)
+```sh
+npm ci
 npm run dev
 ```
 
-### Authentication
+The app uses its bundled catalog if Firestore cannot return products.
+For your own Firebase project, use the public web configuration in
+[.env.example](.env.example). See [firestore.rules](firestore.rules) for the
+catalog and demo-order access rules.
 
-* Google OAuth
+```sh
+npm run lint   # TypeScript check
+npm run build  # production files in dist/
+npm run preview
+```
 
----
+## License
 
-
-## Core Philosophy
-
-* Prioritize usability over feature overload
-* Maintain a clean and readable interface
-* Keep architecture simple and scalable
-
----
-
-## Roadmap
-
-* Product search and filtering
-* Wishlist system
-* Mobile optimization
-
----
-
-## Live Preview
-
-https://nexcart-v1.vercel.app/
-
----
-
-## Author
-
-Harsh
-Computer Engineering Student
-
----
-
-## Closing Note
-
-A focused approach to e-commerce — only what is necessary, nothing extra.
+The original NexCart application source code is MIT licensed. Brand artwork, catalog media, video, and third-party material retain their respective terms. See [LICENSE](LICENSE).

@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CartItem, Product } from '../types';
-import { loadSaved, save } from './storage';
+import { isSavedProduct, loadSaved, save } from './storage';
 
 const KEY = 'nexcart_cart';
 export const MAX_QUANTITY = 10;
 
 const clamp = (n: number) => Math.min(MAX_QUANTITY, Math.max(1, n));
 
+function isSavedCartItem(item: unknown): item is CartItem {
+  return isSavedProduct(item) && 'quantity' in item &&
+    typeof item.quantity === 'number' && Number.isInteger(item.quantity) &&
+    item.quantity >= 1 && item.quantity <= MAX_QUANTITY;
+}
+
 export function useCart() {
-  const [items, setItems] = useState<CartItem[]>(() => loadSaved<CartItem>(KEY));
+  const [items, setItems] = useState(() => loadSaved(KEY, isSavedCartItem));
 
   useEffect(() => save(KEY, items), [items]);
 
