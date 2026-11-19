@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Product } from '../types';
-import { loadSaved, save } from './storage';
+import { isSavedProduct, loadSaved, save } from './storage';
 
 const KEY = 'nexcart_wishlist';
 
 export function useWishlist() {
-  const [items, setItems] = useState<Product[]>(() => loadSaved<Product>(KEY));
+  const [items, setItems] = useState(() => loadSaved(KEY, isSavedProduct));
 
   useEffect(() => save(KEY, items), [items]);
 
